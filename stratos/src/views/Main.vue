@@ -108,7 +108,6 @@
                     0
                 ));
                 viewer.trackedEntity = entity;
-
             },
             drawBalloon(lat, lon, height, headingDeg, pitch, roll) {
                 const {Cesium} = this.cesiumInstance;
