@@ -1,12 +1,14 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from datetime import datetime as dt
 from base64 import b64decode
 from tqdm import tqdm
 from requests import post
 from threading import Thread
+from json import dumps
 
 app = Flask(__name__)
-
+CORS(app)
 
 def extract_date(line_params) -> dt.date:
     DATE_MILLISECOND = line_params[1].split('.')[0]
@@ -34,6 +36,7 @@ def values_changed(changed, what) -> dict:
 
 
 def parse_data(raw_data, name) -> None:
+    print("We parsing now baby!")
     LATITUDE=None
     LONGITUDE=None
     ALTITUDE=None
@@ -93,7 +96,8 @@ def parse_data(raw_data, name) -> None:
                     EXTERNAL_TEMP = float(line_params[12])
                     EXTERNAL_PRESSURE = float(line_params[13])
                     RELATIVE_HUMIDITY = float(line_params[14])
-                    DEW_POINT = float(line_params[16])
+                    if line_params[16] != 'NaN':
+                        DEW_POINT = float(line_params[16])
                     changed = values_changed(changed, [
                                              'internal_temp', 'external_temp', 'external_pressure', 'relative_humidity', 'dew_point'])
                 elif PACKET == 'EM0':
@@ -101,17 +105,25 @@ def parse_data(raw_data, name) -> None:
                     EXTERNAL_TEMP = float(line_params[5])
                     EXTERNAL_PRESSURE = float(line_params[7])
                     RELATIVE_HUMIDITY = float(line_params[6])
-                    DEW_POINT = float(line_params[8])
+                    if line_params[8] != 'NaN':
+                        DEW_POINT = float(line_params[8])
                     changed = values_changed(changed, [
                                              'internal_temp', 'external_temp', 'external_pressure', 'relative_humidity', 'dew_point'])
     print("Text Parse Complete!")
-    post(url='http://127.0.0.1:5050/parsedData', data={
-        'data': data[1:],
+
+    with open('./help.txt', 'w') as f:
+        f.writelines(dumps(data[1:]))
+    what_again = post(url='http://127.0.0.1:5050/parsedData', data={
+        'data': dumps(data[1:]),
         'name': name
     })
+    print("HELLO")
+    print(what_again.headers)
+    print(what_again.content)
     
 @app.route('/parse', methods=['POST'])
 def parse():
+    print("I AM HERE")
     if 'data' not in request.json.keys() or 'name' not in request.json.keys():
         return 'USAGE: Please send body params as { "name": string, "data": b64string }', 400
     try:
