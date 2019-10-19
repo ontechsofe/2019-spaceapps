@@ -5,7 +5,7 @@ var bodyParser = require('body-parser');
 var db = require('diskdb');
 var path = require('path');
 
-var dbPath = path.join(__dirname);
+var dbPath = path.join(__dirname, 'data');
 
 db = db.connect(dbPath, ['GlobalStatosphere']);
 app.use(bodyParser.json({limit: '5gb'}));       // to support JSON-encoded bodies
@@ -32,12 +32,13 @@ app.post('/rawData', (req, res) => {
 
 //Write to DB to store mission data
 app.post('/parsedData', (req, res) => {
-  console.log("We are now parsing data")
+  console.log("We are now parsing data.")
   var mission = {
       name : req.body.name,
       data : req.body.data
   }
   db.GlobalStatosphere.save(mission);
+  console.log(`Data ${req.body.name} is stored.`)
   return res.send('Received a POST HTTP method');
 });
 
