@@ -7,13 +7,13 @@
           <v-col cols="2" class="fill-height">
             <v-sheet color="transparent" class="fill-height pa-5">
               <h1>Altitude</h1>
-              <v-slider readonly :min="0" :max="5000" v-model="altitude" color="white" vertical class="large-slider" thumb-label="always" thumb-color="red"></v-slider>
+              <v-slider :disabled="disabled" readonly :min="0" :max="5000" v-model="altitude" color="white" vertical class="large-slider" thumb-label="always" thumb-color="red"></v-slider>
             </v-sheet>
           </v-col>
           <v-col cols="7" class="fill-height">
             <v-sheet color="transparent" class="fill-height pa-5">
               <div class="viewer elevation-6">
-                <cesium-viewer :animation="animation" :baseLayerPicker="baseLayerPicker" :camera="camera" :timeline="timeline" :info-box="infoBox" @ready="ready">
+                <cesium-viewer :logo="false" :animation="animation" :baseLayerPicker="baseLayerPicker" :camera="camera" :timeline="timeline" :info-box="infoBox" @ready="ready">
                   <imagery-layer>
                     <bingmaps-imagery-provider url="https://dev.virtualearth.net" bmKey="AgcbDCAOb9zMfquaT4Z-MdHX4AsHUNvs7xgdHefEA5myMHxZk87NTNgdLbG90IE-" mapStyle="Aerial"/>
                   </imagery-layer>
@@ -37,7 +37,7 @@
           <v-col cols="12">
             <v-sheet :min="0" :max="5000" color="black" class="pa-5 elevation-6" style="height:100%">
               <h3>Timeline</h3>
-              <v-slider v-model="slider" color="white"></v-slider>
+              <v-slider :disabled="disabled" v-model="slider" color="white"></v-slider>
             </v-sheet>
           </v-col>
         </v-row>
@@ -59,6 +59,7 @@
         name: 'main',
         props: ['id'],
         data: () => ({
+            disabled: true,
             altitude: null,
             slider: null,
             dialog: false,
@@ -68,8 +69,8 @@
             allPoints: [],
             camera: {
                 position: {
-                    lng:  -80.498378,
-                    lat: 43.450941,
+                    lng:  0,
+                    lat: 0,
                     height: 200
                 },
                 heading: 360,
@@ -97,9 +98,24 @@
             },
             ready (cesiumInstance) {
                 this.cesiumInstance = cesiumInstance;
-                const {viewer} = this.cesiumInstance;
+                const {viewer, Cesium} = this.cesiumInstance;
                 viewer.entities.removeAll();
-                let entity = viewer.entities.add(this.drawBalloon(
+                viewer.entities.add({
+                    name : 'Blue dashed line',
+                    polyline : {
+                        positions : Cesium.Cartesian3.fromDegreesArrayHeights([
+                            -80.498378, 43.450941, 294,
+                            -80.498378, 43.450941, 500,
+                            -80.508378, 43.430941, 1000,
+                            -80.528378, 43.420941, 294,
+                        ]),
+                        width : 4,
+                        material : new Cesium.PolylineDashMaterialProperty({
+                            color: Cesium.Color.RED
+                        })
+                    }
+                });
+                viewer.entities.add(this.drawBalloon(
                     43.450941,
                     -80.498378,
                     0,
@@ -107,7 +123,14 @@
                     0,
                     0
                 ));
-                viewer.trackedEntity = entity;
+                // viewer.trackedEntity = entity;
+                this.camera.position.lat = 43.450941;
+                this.camera.position.lng = -80.498378;
+                this.camera.position.height = 500;
+                this.camera.heading = Cesium.Math.toRadians(360);
+                this.camera.pitch = -90;
+                this.camera.roll = 0;
+                this.disabled = false;
             },
             drawBalloon(lat, lon, height, headingDeg, pitch, roll) {
                 const {Cesium} = this.cesiumInstance;
@@ -116,7 +139,7 @@
                 let hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
                 let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
                 return {
-                    name : "/SampleData/models/CesiumBalloon/CesiumBalloon.glb",
+                    name : "Balloon",
                     position : position,
                     orientation : orientation,
                     model : {
