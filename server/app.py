@@ -1,7 +1,5 @@
 from flask import Flask, request, jsonify
-from os import path
 from datetime import datetime as dt
-from json import dumps, loads
 from base64 import b64decode
 
 app = Flask(__name__)
@@ -104,4 +102,4 @@ def parse():
 
 if __name__ == '__main__':
     app.run(debug=True)
-    # print(upload())
+    
