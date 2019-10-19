@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from os import path
 from datetime import datetime as dt
 from json import dumps, loads
@@ -11,13 +11,25 @@ def extract_date(line_params) -> dt.date:
     
     return dt.strptime(DATE_MILLISECOND, '%Y-%m-%d %H:%M:%S')
 
-@app.route('/upload', methods=['POST'])
-def upload():
-    raw_data = b64decode(request.json['text']).decode('utf-8').split('\n')
-    data = list()
-    line_params = raw_data[0].split(',')
-    previous_second = extract_date(line_params).second
+def reset_changed() -> dict:
+    return {
+        'latitude': False,
+        'longitude': False,
+        'altitude': False,
+        'internal_temp': False,
+        'external_temp': False,
+        'external_pressure': False,
+        'relative_humidity': False,
+        'dew_point': False
+    }
 
+def values_changed(changed, what) -> dict:
+    for change in what:
+        changed[change] = True
+    return changed
+
+@app.route('/parse', methods=['POST'])
+def parse():
     LATITUDE = None
     LONGITUDE = None
     ALTITUDE = None
@@ -26,6 +38,13 @@ def upload():
     EXTERNAL_PRESSURE = None
     RELATIVE_HUMIDITY = None
     DEW_POINT = None
+
+    changed = reset_changed()
+
+    raw_data = b64decode(request.json['text']).decode('utf-8').split('\n')
+    data = list()
+    line_params = raw_data[0].split(',')
+    previous_second = extract_date(line_params).second
 
     # TODO: Make sure to fill a full object first and then continue
 
@@ -37,6 +56,7 @@ def upload():
             DATE = extract_date(line_params)
 
             # If we enter a new second
+            APPROXIMATED = [x for x, y in changed.items() if not y]
             if DATE.second != previous_second:
                 element = {
                     'date_time': DATE.strftime('%Y-%m-%d %H:%M:%S'),
@@ -47,7 +67,8 @@ def upload():
                     'external_temp': EXTERNAL_TEMP,
                     'external_pressure': EXTERNAL_PRESSURE,
                     'relative_humidity': RELATIVE_HUMIDITY,
-                    'dew_point': DEW_POINT
+                    'dew_point': DEW_POINT,
+                    'approximated': APPROXIMATED
                 }
                 data.append(element)
             previous_second = DATE.second
@@ -62,6 +83,7 @@ def upload():
                     LATITUDE = float(line_params[4])
                     LONGITUDE = float(line_params[5])
                     ALTITUDE = float(line_params[6])
+                    changed = values_changed(changed, ['latitude', 'longitude', 'altitude'])
             elif SOURCE == 'SW_EM':
                 if PACKET == 'HK':
                     INTERNAL_TEMP = float(line_params[11])
@@ -69,14 +91,16 @@ def upload():
                     EXTERNAL_PRESSURE = float(line_params[13])
                     RELATIVE_HUMIDITY = float(line_params[14])
                     DEW_POINT = float(line_params[16])
+                    changed = values_changed(changed, ['internal_temp', 'external_temp', 'external_pressure', 'relative_humidity', 'dew_point'])
                 elif PACKET == 'EM0':
                     INTERNAL_TEMP = float(line_params[4])
                     EXTERNAL_TEMP = float(line_params[5])
                     EXTERNAL_PRESSURE = float(line_params[7])
                     RELATIVE_HUMIDITY = float(line_params[6])
                     DEW_POINT = float(line_params[8])
+                    changed = values_changed(changed, ['internal_temp', 'external_temp', 'external_pressure', 'relative_humidity', 'dew_point'])
     print("Text Parse Complete!")
-    return dumps(data)
+    return jsonify(data[1:])
 
 if __name__ == '__main__':
     app.run(debug=True)
