@@ -1,1 +1,4 @@
-static/
+node_modules/
+data/
+*.yml
+*.lock
