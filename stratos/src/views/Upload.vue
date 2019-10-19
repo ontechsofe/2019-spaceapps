@@ -72,7 +72,6 @@
                             data: data,
                             name: this.name
                         };
-                        console.log(out);
                         axios.post('http://google.ca/search', out)
                             .then((res) => {
                                 console.log(res);

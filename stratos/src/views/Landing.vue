@@ -20,9 +20,16 @@
             <v-card color="transparent" class="elevation-0">
               <v-row align="center" justify="center">
                 <v-col cols="6">
-                  <v-card class="elevation-8">
-                    <v-img src="@/assets/balloon.jpeg"></v-img>
-                  </v-card>
+                  <v-hover>
+                    <v-card @mouseover="hover = true" @mouseleave="hover = false" class="elevation-8">
+                      <v-img src="@/assets/balloon.jpeg"></v-img>
+                      <v-fade-transition>
+                        <v-overlay v-if="hover" absolute>
+                          <v-btn href="http://www.asc-csa.gc.ca/eng/sciences/balloons/default.asp">Tell me more about the balloons</v-btn>
+                        </v-overlay>
+                      </v-fade-transition>
+                    </v-card>
+                  </v-hover>
                 </v-col>
                 <v-col cols="6">
                   <v-card flat color="transparent" class="pa-7">
@@ -41,23 +48,25 @@
         </v-row>
       </v-container>
     </v-content>
+    <v-footer app color="transparent" justify="center">
+      <v-container>
+        <v-row>
+          <v-img height="50px" aspect-ratio="1" src="@/assets/csa.png" contain></v-img>
+          <v-spacer></v-spacer>
+          <p style="color: black">&copy; The EH Team 2019</p>
+        </v-row>
+      </v-container>
+    </v-footer>
   </v-app>
 </template>
 
 <script>
-// @ is an alias to /src
-// import HelloWorld from '@/components/Visualizer.vue'
-// import Header from '@/components/Header.vue'
-
-export default {
-  name: 'landing',
-  components: {
-    // Header
-  },
-  created() {
-    // this.$vuetify.theme.dark = true;
-  }
-}
+    export default {
+        name: 'landing',
+        data: () => ({
+            hover: false
+        })
+    }
 </script>
 
 <style lang="scss">

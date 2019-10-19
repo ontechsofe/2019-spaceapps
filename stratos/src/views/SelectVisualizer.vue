@@ -10,11 +10,12 @@
                 <h1>
                   Select the Visualization
                 </h1>
-                <v-autocomplete class="mt-12" color="white" background-color="primary" label="DataSets" :items="dataSets"></v-autocomplete>
+                <v-autocomplete v-model="model" item-text="name" item-value="id" class="mt-12" color="white"
+                                background-color="primary" label="DataSets" :items="dataSetNames"></v-autocomplete>
               </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn outlined >Go</v-btn>
+                <v-btn outlined @click="gotoVisualization">Go</v-btn>
               </v-card-actions>
             </v-card>
           </v-col>
@@ -31,14 +32,29 @@
     export default {
         name: 'select',
         data: () => ({
-            dataSets: []
+            dataSets: [],
+            model: null
         }),
+        methods: {
+            gotoVisualization() {
+                this.$router.push(`/visualizer/${this.model}`);
+            }
+        },
+        computed: {
+            dataSetNames() {
+                // return this.dataSets.map(e => e.name);
+                return this.dataSets
+            }
+        },
         components: {
             Header
         },
         mounted() {
             this.dataSets = [
-                "AUSTRALIA", "TIMMINS"
+                {
+                    id: "randomstring",
+                    name: "TIMMINS"
+                }
             ] // TODO: placeholder till axios to server for all known datasets
         }
     }

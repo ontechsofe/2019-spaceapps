@@ -13,7 +13,8 @@
 </template>
 
 <script>
-export default {
-  data: () => ({})
-};
+    export default {
+        name: 'header',
+        data: () => ({})
+    };
 </script>

@@ -27,7 +27,8 @@ const routes = [
     {
         path: '/visualizer/:id',
         name: 'visualizer',
-        component: Main
+        component: Main,
+        props: true
     }
 ];
 
