@@ -1,0 +1,22 @@
+{
+  "name": "stratosphere",
+  "version": "0.1.1",
+  "description": "STRATOSphere",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"cd server && yarn start \" \"python ./server/micro-service/app.py\" \" cd ./stratos && yarn serve\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ontechsofe/2019-spaceapps.git"
+  },
+  "author": "The EH Team",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ontechsofe/2019-spaceapps/issues"
+  },
+  "homepage": "https://github.com/ontechsofe/2019-spaceapps#readme",
+  "devDependencies": {
+    "concurrently": "^5.0.0"
+  }
+}

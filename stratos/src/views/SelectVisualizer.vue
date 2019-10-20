@@ -28,6 +28,7 @@
 <script>
     // @ is an alias to /src
     import Header from '@/components/Header.vue';
+    import axios from 'axios';
 
     export default {
         name: 'select',
@@ -42,7 +43,6 @@
         },
         computed: {
             dataSetNames() {
-                // return this.dataSets.map(e => e.name);
                 return this.dataSets
             }
         },
@@ -50,12 +50,11 @@
             Header
         },
         mounted() {
-            this.dataSets = [
-                {
-                    id: "randomstring",
-                    name: "TIMMINS"
-                }
-            ] // TODO: placeholder till axios to server for all known datasets
+            axios.get('http://localhost:5050/allDataSets').then(res => {
+                this.dataSets = res.data;
+            }).catch(err => {
+                console.log(err);
+            })
         }
     }
 </script>
