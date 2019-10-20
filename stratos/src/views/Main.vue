@@ -6,7 +6,7 @@
         <v-row style="height:85%">
           <v-col cols="2" class="fill-height">
             <v-sheet color="transparent" class="fill-height pa-5">
-              <h1>Altitude</h1>
+              <h1>Altitude (m)</h1>
               <v-slider :disabled="disabled" readonly :min="0" :max="37000" v-model="altitude" color="white" vertical
                         class="large-slider" thumb-label="always"  thumb-size="80"  thumb-color="red"></v-slider>
             </v-sheet>
@@ -157,7 +157,7 @@
                     polyline: {
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(this.balloonPathArray),
                         width: 10,
-                        // material: new Cesium.PolylineMaterialProperty({
+                        // material: new Cesium.PolylineDashMaterialProperty({
                         //     color: Cesium.Color.RED
                         // })
                     }
