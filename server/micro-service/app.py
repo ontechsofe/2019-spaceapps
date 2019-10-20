@@ -10,6 +10,7 @@ from json import dumps
 app = Flask(__name__)
 CORS(app)
 
+
 def extract_date(line_params) -> dt.date:
     DATE_MILLISECOND = line_params[1].split('.')[0]
 
@@ -25,7 +26,9 @@ def reset_changed() -> dict:
         'external_temp': False,
         'external_pressure': False,
         'relative_humidity': False,
-        'dew_point': False
+        'dew_point': False,
+        'horizon_image': False,
+        'nadir_image': False
     }
 
 
@@ -37,16 +40,18 @@ def values_changed(changed, what) -> dict:
 
 def parse_data(raw_data, name) -> None:
     print("We parsing now baby!")
-    LATITUDE=None
-    LONGITUDE=None
-    ALTITUDE=None
-    INTERNAL_TEMP=None
-    EXTERNAL_TEMP=None
-    EXTERNAL_PRESSURE=None
-    RELATIVE_HUMIDITY=None
-    DEW_POINT=None
+    LATITUDE = None
+    LONGITUDE = None
+    ALTITUDE = None
+    INTERNAL_TEMP = None
+    EXTERNAL_TEMP = None
+    EXTERNAL_PRESSURE = None
+    RELATIVE_HUMIDITY = None
+    DEW_POINT = None
+    HORIZON_IMAGE = None
+    NADIR_IMAGE = None
 
-    changed=reset_changed()
+    changed = reset_changed()
     data = list()
     line_params = raw_data[0].split(',')
     previous_second = extract_date(line_params).second
@@ -57,7 +62,7 @@ def parse_data(raw_data, name) -> None:
         line_params = line.split(',')
         SOURCE = line_params[0].upper()
         PACKET = line_params[3].upper()
-        if [SOURCE, PACKET] in [['GPS01', 'GGA'], ['SWNAV', 'HKP'], ['SWNAV', 'POS0'], ['SW_EM', 'HK'], ['SW_EM', 'EM0']]:
+        if [SOURCE, PACKET] in [['GPS01', 'GGA'], ['SWNAV', 'HKP'], ['SWNAV', 'POS0'], ['SW_EM', 'HK'], ['SW_EM', 'EM0'], ['SWCDH', 'EVENT']]:
             DATE = extract_date(line_params)
 
             # If we enter a new second
@@ -73,7 +78,9 @@ def parse_data(raw_data, name) -> None:
                     'external_pressure': EXTERNAL_PRESSURE,
                     'relative_humidity': RELATIVE_HUMIDITY,
                     'dew_point': DEW_POINT,
-                    'approximated': APPROXIMATED
+                    'approximated': APPROXIMATED,
+                    'horizon_image': HORIZON_IMAGE,
+                    'nadir_image': NADIR_IMAGE
                 }
                 data.append(element)
             previous_second = DATE.second
@@ -109,31 +116,43 @@ def parse_data(raw_data, name) -> None:
                         DEW_POINT = float(line_params[8])
                     changed = values_changed(changed, [
                                              'internal_temp', 'external_temp', 'external_pressure', 'relative_humidity', 'dew_point'])
+            elif SOURCE == 'SWCDH':
+                if PACKET == 'EVENT':
+                    picture_config = line_params[4]
+                    if 'Taking onboard image' in picture_config:
+                        directory = picture_config.split('/')
+                        NADIR_IMAGE = 'CAM1-NADIR/' + \
+                            directory[len(directory)-1]
+                        changed = values_changed(changed, ['nadir_image'])
+                    elif 'Requesting image from NAVEM' in picture_config:
+                        directory = picture_config.split('/')
+                        HORIZON_IMAGE = 'CAM2-HOR/' + \
+                            directory[len(directory)-1]
+                        changed = values_changed(changed, ['horizon_image'])
     print("Text Parse Complete!")
 
     with open('./help.txt', 'w') as f:
         f.writelines(dumps(data[1:]))
-    what_again = post(url='http://127.0.0.1:5050/parsedData', data={
+    post(url='http://127.0.0.1:5050/parsedData', data={
         'data': dumps(data[1:]),
         'name': name
     })
-    print("HELLO")
-    print(what_again.headers)
-    print(what_again.content)
-    
+
+
 @app.route('/parse', methods=['POST'])
 def parse():
-    print("I AM HERE")
+    print("/parse Endpoint reached")
     if 'data' not in request.json.keys() or 'name' not in request.json.keys():
         return 'USAGE: Please send body params as { "name": string, "data": b64string }', 400
     try:
-        raw_data=b64decode(request.json['data']).decode('utf-8').split('\n')
+        raw_data = b64decode(request.json['data']).decode('utf-8').split('\n')
     except:
         return 'Something went wrong decoding the base64 data!', 400
     name = request.json['name']
     thread = Thread(target=parse_data, args=[raw_data, name])
     thread.start()
     return 'Data is being parsed', 200
+
 
 if __name__ == '__main__':
     app.run(debug=True)
