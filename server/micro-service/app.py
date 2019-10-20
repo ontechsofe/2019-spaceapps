@@ -110,7 +110,8 @@ def parse_data(raw_data, name) -> None:
                     HEADING = float(line_params[7])
                     PITCH = float(line_params[11])
                     YAW = float(line_params[12])
-                    changed = values_changed(changed, ['heading', 'pitch', 'yaw'])
+                    changed = values_changed(
+                        changed, ['heading', 'pitch', 'yaw'])
             elif SOURCE == 'SW_EM':
                 if PACKET == 'HK':
                     INTERNAL_TEMP = float(line_params[11])
@@ -142,7 +143,7 @@ def parse_data(raw_data, name) -> None:
                         directory = picture_config.split('/')
                         HORIZON_IMAGE = 'CAM2-HOR/' + \
                             directory[len(directory)-1]
-                        changed = values_changed(changed, ['horizon_image'])                
+                        changed = values_changed(changed, ['horizon_image'])
 
     print("Text Parse Complete!")
 
