@@ -4,7 +4,6 @@ import Main from '../views/Main.vue'
 import Upload from '../views/Upload.vue'
 import Landing from '../views/Landing.vue'
 import SelectVisualizer from "../views/SelectVisualizer";
-// import Full from '../views/Full.vue'
 
 Vue.use(VueRouter);
 

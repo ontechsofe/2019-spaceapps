@@ -8,7 +8,7 @@
             <v-sheet color="transparent" class="fill-height pa-5">
               <h1>Altitude</h1>
               <v-slider :disabled="disabled" readonly :min="0" :max="37000" v-model="altitude" color="white" vertical
-                        class="large-slider" thumb-label="always" thumb-color="red"></v-slider>
+                        class="large-slider" thumb-label="always"  thumb-size="80"  thumb-color="red"></v-slider>
             </v-sheet>
           </v-col>
           <v-col cols="7" class="fill-height">
@@ -40,8 +40,11 @@
         <v-row style="height:15%">
           <v-col cols="12">
             <v-sheet :min="0" :max="5000" color="black" class="pa-5 elevation-6" style="height:100%">
-              <h3>Timeline</h3>
-              <v-slider @change="onTimeChange" thumb-label="always" :min="0" :max="allPoints.length ? allPoints.length : 0" :disabled="disabled" v-model="time" color="white"></v-slider>
+<!--              <h3>Timeline</h3>-->
+              <v-btn @click="startAnimation">Timeline</v-btn>
+              <v-slider @change="onTimeChange" :min="0"
+                        :max="allPoints.length ? allPoints.length : 0" :disabled="disabled" v-model="time"
+                        color="white"></v-slider>
             </v-sheet>
           </v-col>
         </v-row>
@@ -65,8 +68,8 @@
         props: ['id'],
         data: () => ({
             disabled: true,
-            time: null,
-            altitude: null,
+            time: 0,
+            altitude: 0,
             dialog: false,
             horizonSrc: "https://ethanelliott.ca/2019spaceapps/Stratos_DataSet/TIMMINS2018/CDH/CAM2-HOR/100.jpg",
             bottomSrc: "https://ethanelliott.ca/2019spaceapps/Stratos_DataSet/TIMMINS2018/CDH/CAM1-NADIR/103L.jpg",
@@ -86,7 +89,11 @@
             baseLayerPicker: false,
             timeline: false,
             infoBox: true,
-            cesiumInstance: null
+            cesiumInstance: null,
+            balloonPathArray: [],
+            debounceMethod: null,
+            balloonObject: null,
+            animationInterval: null
         }),
         components: {
             Header,
@@ -94,8 +101,21 @@
         },
         methods: {
             onTimeChange() {
-                if (this.allPoints[this.time]) {
-                    this.altitude = this.allPoints[this.time].altitude;
+                if (this.cesiumInstance && this.allPoints[this.time]) {
+                    this.debounceMethod()
+                }
+            },
+            startAnimation() {
+                let c = this;
+                let rate = 200;
+                if (c.animationInterval) {
+                    clearInterval(c.animationInterval);
+                    c.animationInterval = null;
+                } else {
+                    c.animationInterval = setInterval(() => {
+                        c.time += rate;
+                        c.debounceMethod();
+                    }, 5000)
                 }
             },
             openHorizonModal() {
@@ -108,43 +128,44 @@
             },
             ready(cesiumInstance) {
                 this.cesiumInstance = cesiumInstance;
+            },
+            redrawMap(p) {
+                if (this.cesiumInstance && this.allPoints[this.time]) {
+                    console.log(p);
+                    const {viewer} = this.cesiumInstance;
+                    viewer.entities.remove(this.balloonObject);
+                    this.redrawPath();
+                    this.redrawBalloon(p)
+                }
+            },
+            redrawBalloon(p) {
                 const {viewer, Cesium} = this.cesiumInstance;
-                viewer.entities.removeAll();
-                viewer.entities.add({
-                    name: 'Blue dashed line',
-                    polyline: {
-                        positions: Cesium.Cartesian3.fromDegreesArrayHeights([
-                            -80.498378, 43.450941, 294,
-                            -80.498378, 43.450941, 500,
-                            -80.508378, 43.430941, 1000,
-                            -80.528378, 43.420941, 294,
-                        ]),
-                        width: 4,
-                        material: new Cesium.PolylineDashMaterialProperty({
-                            color: Cesium.Color.RED
-                        })
-                    }
-                });
-                viewer.entities.add(this.drawBalloon(
-                    43.450941,
-                    -80.498378,
-                    0,
-                    360,
-                    0,
-                    0
-                ));
-                // viewer.trackedEntity = entity;
-                this.camera.position.lat = 43.450941;
-                this.camera.position.lng = -80.498378;
-                this.camera.position.height = 500;
+                this.camera.position.lat = this.allPoints[0].latitude;
+                this.camera.position.lng = this.allPoints[0].longitude;
+                this.camera.position.height = 1000;
                 this.camera.heading = Cesium.Math.toRadians(360);
                 this.camera.pitch = -90;
                 this.camera.roll = 0;
-                this.disabled = false;
+                this.balloonObject = viewer.entities.add(
+                    this.drawBalloon(p.latitude, p.longitude, p.altitude, 0, 0, 0)
+                );
+            },
+            redrawPath() {
+                const {viewer, Cesium} = this.cesiumInstance;
+                viewer.entities.add({
+                    name: 'Red dashed line',
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(this.balloonPathArray),
+                        width: 10,
+                        // material: new Cesium.PolylineMaterialProperty({
+                        //     color: Cesium.Color.RED
+                        // })
+                    }
+                });
             },
             drawBalloon(lat, lon, height, headingDeg, pitch, roll) {
                 const {Cesium} = this.cesiumInstance;
-                let position = Cesium.Cartesian3.fromDegrees(lon, lat, height + 294.0);
+                let position = Cesium.Cartesian3.fromDegrees(lon, lat, height);
                 let heading = Cesium.Math.toRadians(headingDeg);
                 let hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
                 let orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
@@ -154,22 +175,65 @@
                     orientation: orientation,
                     model: {
                         uri: "/SampleData/models/CesiumBalloon/CesiumBalloon.glb",
-                        minimumPixelSize: 64,
-                        maximumScale: 1
+                        minimumPixelSize: 128,
+                        maximumScale: 200
                     }
                 };
             }
         },
         mounted() {
             console.log(this.id);
+            let c = this;
             axios.get(`http://localhost:5050/visualize?id=${this.id}`)
                 .then(res => {
+                    console.log("Got All Points");
                     this.allPoints = res.data[0].data;
+                    this.allPoints.forEach(e => {
+                        this.balloonPathArray.push(e.longitude);
+                        this.balloonPathArray.push(e.latitude);
+                        this.balloonPathArray.push(e.altitude);
+                    });
+                    this.debounceMethod = debounce(() => {
+                        console.log(JSON.stringify(c.allPoints[0]));
+                        if (c.allPoints[c.time].altitude) {
+                            c.altitude = c.allPoints[c.time].altitude;
+                            if (c.allPoints[c.time].nadir_image) {
+                                let url = c.allPoints[c.time].nadir_image.split('.');
+                                url = `${url[0]}L.${url[1]}`;
+                                this.bottomSrc = `https://ethanelliott.ca/2019spaceapps/Stratos_DataSet/TIMMINS2018/CDH/${url}`;
+                            }
+                            if (c.allPoints[c.time].horizon_image) {
+                                this.horizonSrc = `https://ethanelliott.ca/2019spaceapps/Stratos_DataSet/TIMMINS2018/CDH/${c.allPoints[c.time].horizon_image}`;
+                            }
+                            let p = c.allPoints[c.time];
+                            c.redrawMap(p);
+                        } else {
+                            c.redrawMap(c.allPoints[0]);
+                        }
+                    }, 500, false);
+                    this.debounceMethod();
+                    this.disabled = false;
                 }).catch(err => {
                 console.log(err);
             })
         }
     }
+
+    function debounce(func, wait, immediate) {
+        let timeout;
+        return function() {
+            const context = this, args = arguments;
+            const later = function () {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            const callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    }
+
 </script>
 
 <style lang="scss">
@@ -179,6 +243,6 @@
 
   .viewer {
     width: 100%;
-    height: 650px;
+    height: 680px;
   }
 </style>
