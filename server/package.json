@@ -1,6 +1,7 @@
 {
   "scripts": {
     "start": "node app.js",
+    "dev": "nodemon app.js",
     "start:service": "python3 ./micro-service/app.py"
   },
   "dependencies": {
