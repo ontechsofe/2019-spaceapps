@@ -10,5 +10,5 @@
 After installing all dependencies in main folders. Make sure you are in the main directory and run:
 
 ```bash
-npm start
+yarn start
 ```
