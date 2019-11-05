@@ -22,7 +22,7 @@ The video of the presentation is available at: [this link](https://youtube.com)
 
 ### Powerpoint Presentation
 
-The presentation is available in this repository at: [this link](presentation/presentation.pptx)
+The presentation is available in this repository at: [this link](presentation/)
 
 ## Code
 
