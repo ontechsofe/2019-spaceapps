@@ -12,6 +12,8 @@ We are the EH-Team, and we consist of:
 - Brent Myers: [brent.myers@ontariotechu.net](mailto:brent.myers@ontariotechu.net)
 - Anirudh Mungre: [anirudh.mungre@ontariotechu.net](mailto:anirudh.mungre@ontariotechu.net)
 
+![eh team](eh_team.jpg)
+
 ### Location
 
 We participated in the Waterloo region chapter of the Space Apps Challenge
