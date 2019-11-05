@@ -18,7 +18,7 @@ We participated in the Waterloo region chapter of the Space Apps Challenge
 
 ### Video Presentation
 
-The video of the presentation is available at: [this link](https://youtube.com)
+The video of the presentation is available at: [this link](video/)
 
 ### Powerpoint Presentation
 
